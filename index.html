@@ -4,63 +4,9 @@
   <meta charset="UTF-8">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'">
   <title>Azure Blob Uploader</title>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      margin: 0;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-    }
-    
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
-      background-color: #0078d7;
-      color: white;
-      border: none;
-      border-radius: 4px;
-    }
-    
-    button:hover {
-      background-color: #106ebe;
-    }
-    
-    #message {
-      margin-top: 20px;
-      font-size: 18px;
-    }
-  </style>
 </head>
 <body>
-  <h1>Azure Blob Uploader</h1>
-  <button id="showMessage">Show Message</button>
-  <div id="message"></div>
-
-  <script>
-    // 起動時にelectronAPIが利用可能か確認
-    console.log('electronAPI available:', window.electronAPI);
-    
-    // ボタンがクリックされたときの処理
-    document.getElementById('showMessage').addEventListener('click', () => {
-      try {
-        if (window.electronAPI && window.electronAPI.showMessage) {
-          const message = window.electronAPI.showMessage();
-          document.getElementById('message').textContent = message;
-          console.log('Message displayed:', message);
-        } else {
-          console.error('electronAPI.showMessage is not available');
-          document.getElementById('message').textContent = 'Error: API not available';
-        }
-      } catch (error) {
-        console.error('Error showing message:', error);
-        document.getElementById('message').textContent = 'Error: ' + error.message;
-      }
-    });
-  </script>
+  <div id="root"></div>
+  <script src="./dist/renderer.js"></script>
 </body>
 </html>
