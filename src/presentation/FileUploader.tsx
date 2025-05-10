@@ -1,4 +1,4 @@
-import React, { useState, useRef, ChangeEvent, useEffect } from 'react';
+import React, { useState, useRef, ChangeEvent, useEffect, ClipboardEvent } from 'react';
 import { Effect } from 'effect';
 import { FileInfo } from '../domain/models';
 import { getFileInfo } from '../infrastructure/fileHelper';
@@ -19,6 +19,48 @@ const FileUploader: React.FC = () => {
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [useMock, setUseMock] = useState<boolean>(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  // クリップボードから画像をペーストする処理
+  const handlePaste = async (event: ClipboardEvent<HTMLDivElement>) => {
+    // ペーストイベントを処理
+    {
+      try {
+        // アップロード中は処理しない
+        if (isUploading) return;
+        
+        // Electron APIが利用可能か確認
+        if (!window.electronAPI) {
+          throw new Error('Electron APIが利用できません');
+        }
+        
+        setIsUploading(true);
+        setMessage('クリップボードから画像を取得中...');
+        setError(null);
+        setUploadedUrl(null);
+        
+        // クリップボードから画像を取得
+        const clipboardResult = await window.electronAPI.getClipboardImage();
+        
+        if (!clipboardResult.success) {
+          throw new Error(clipboardResult.error || 'クリップボードから画像を取得できませんでした');
+        }
+        
+        // ファイル情報を取得
+        const fileInfo = clipboardResult.fileInfo;
+        console.log('クリップボード画像情報:', fileInfo);
+        
+        // アップロード処理
+        setMessage('クリップボード画像をアップロード中...');
+        await uploadFile(fileInfo);
+        
+      } catch (error) {
+        console.error('クリップボード画像ペーストエラー:', error);
+        setError(error instanceof Error ? error.message : '不明なエラーが発生しました');
+        setIsUploading(false);
+      }
+    }
+  };
   
   // 設定を読み込む
   useEffect(() => {
@@ -137,8 +179,14 @@ const FileUploader: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
+    <div 
+      ref={containerRef}
+      style={{ padding: '20px', fontFamily: 'sans-serif' }}
+      tabIndex={0} // キーボードイベントを受け取るためにtabIndexを設定
+      onPaste={handlePaste} // ペーストイベントをハンドル
+    >
       <h2>ファイルアップロード</h2>
+      <p>ファイルを選択するか、Ctrl+V（またはCmd+V）でクリップボードから画像をペーストしてください。</p>
       
       <div style={{ marginBottom: '20px' }}>
         <input

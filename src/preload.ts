@@ -37,6 +37,11 @@ try {
     // ファイルアップロード関数
     uploadFile: async (fileInfo) => {
       return ipcRenderer.invoke('file:upload', fileInfo);
+    },
+    
+    // クリップボードから画像を取得する関数
+    getClipboardImage: async () => {
+      return ipcRenderer.invoke('clipboard:getImage');
     }
   });
   console.log('electronAPIが正常に公開されました');

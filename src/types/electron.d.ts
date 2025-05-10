@@ -7,5 +7,6 @@ interface Window {
     getFileInfo: (filePath: string) => Promise<any>;
     getConfig: () => Promise<any>;
     uploadFile: (fileInfo: any) => Promise<any>;
+    getClipboardImage: () => Promise<any>;
   }
 }
