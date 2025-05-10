@@ -6,9 +6,6 @@ import FileUploader from './presentation/FileUploader';
 const App: React.FC = () => {
   return (
     <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
-      <h1>Azure Blob Uploader</h1>
-      <p>ファイルを選択してAzure Blob Storageにアップロードします。</p>
-      
       <FileUploader />
     </div>
   );

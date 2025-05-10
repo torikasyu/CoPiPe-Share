@@ -185,7 +185,7 @@ const FileUploader: React.FC = () => {
       tabIndex={0} // キーボードイベントを受け取るためにtabIndexを設定
       onPaste={handlePaste} // ペーストイベントをハンドル
     >
-      <h2>ファイルアップロード</h2>
+      <h2>Azure Blob Storage アップロード</h2>
       <p>ファイルを選択するか、Ctrl+V（またはCmd+V）でクリップボードから画像をペーストしてください。</p>
       
       <div style={{ marginBottom: '20px' }}>
