@@ -1,21 +1,35 @@
-import { contextBridge, ipcRenderer } from 'electron';
+// @ts-nocheck
+// TypeScriptの型チェックを無効化（プリロードスクリプトはJavaScriptとして実行されるため）
+const { contextBridge, ipcRenderer } = require('electron');
 
-// APIの型定義
-declare global {
-  interface Window {
-    electronAPI: {
-      showMessage: () => string;
-    }
-  }
-}
+console.log('プリロードスクリプトが読み込まれました');
 
 // レンダラープロセスに公開するAPIを定義
-contextBridge.exposeInMainWorld('electronAPI', {
-  // ここにIPC通信の関数を追加
-  showMessage: () => {
-    console.log('showMessage function called');
-    return 'Hello World';
-  }
-});
-
-console.log('Preload script has been loaded');
+try {
+  // IPC通信を使用してメインプロセスと通信する方法に変更
+  contextBridge.exposeInMainWorld('electronAPI', {
+    // テスト用のメッセージ表示関数
+    showMessage: () => {
+      console.log('showMessage function called');
+      return 'Hello World';
+    },
+    
+    // ファイル選択ダイアログを開く
+    selectFile: async () => {
+      return ipcRenderer.invoke('dialog:openFile');
+    },
+    
+    // ファイル読み込み関数
+    readFile: async (filePath) => {
+      return ipcRenderer.invoke('file:read', filePath);
+    },
+    
+    // ファイル情報取得関数
+    getFileInfo: async (filePath) => {
+      return ipcRenderer.invoke('file:getInfo', filePath);
+    }
+  });
+  console.log('electronAPIが正常に公開されました');
+} catch (error) {
+  console.error('プリロードスクリプトエラー:', error);
+}

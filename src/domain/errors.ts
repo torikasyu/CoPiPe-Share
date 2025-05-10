@@ -40,3 +40,16 @@ export class UploadError extends Error {
     this.name = "UploadError";
   }
 }
+
+/**
+ * 設定エラー
+ * 設定ファイルの読み込みや解析中に発生するエラーを表します
+ */
+export class ConfigError extends Error {
+  readonly _tag = "ConfigError";
+  
+  constructor(message: string) {
+    super(message);
+    this.name = "ConfigError";
+  }
+}

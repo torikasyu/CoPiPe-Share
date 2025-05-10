@@ -16,19 +16,22 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "concurrently": "^8.0.1",
     "electron": "^28.0.0",
+    "ts-loader": "^9.4.2",
     "typescript": "^5.0.4",
     "wait-on": "^7.0.1",
-    "ts-loader": "^9.4.2",
     "webpack": "^5.80.0",
     "webpack-cli": "^5.0.2"
   },
   "dependencies": {
+    "@azure/storage-blob": "^12.27.0",
     "@effect/io": "^0.41.2",
     "effect": "^2.0.0-next.54",
+    "js-yaml": "^4.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   }
