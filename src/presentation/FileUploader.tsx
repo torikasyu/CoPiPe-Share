@@ -1,9 +1,11 @@
-import React, { useState, useRef, ChangeEvent } from 'react';
+import React, { useState, useRef, ChangeEvent, useEffect } from 'react';
 import { Effect } from 'effect';
 import { FileInfo } from '../domain/models';
 import { getFileInfo } from '../infrastructure/fileHelper';
 import { uploadFileUseCase } from '../application/usecases';
 import { mockFileUploadRepository, mockFileHistoryRepository } from '../infrastructure/mockRepositories';
+import { createAzureBlobRepository } from '../infrastructure/azureBlobRepository';
+import { AppConfig } from '../domain/config';
 
 /**
  * ファイルアップロードコンポーネント
@@ -14,7 +16,40 @@ const FileUploader: React.FC = () => {
   const [message, setMessage] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
+  const [config, setConfig] = useState<AppConfig | null>(null);
+  const [useMock, setUseMock] = useState<boolean>(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // 設定を読み込む
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        // Electron APIが利用可能か確認
+        if (!window.electronAPI) {
+          throw new Error('Electron APIが利用できません');
+        }
+        
+        // メインプロセスから設定を取得
+        const loadedConfig = await window.electronAPI.getConfig();
+        setConfig(loadedConfig);
+        
+        // 接続文字列が設定されている場合はモックを無効化
+        if (loadedConfig.azureStorage.connectionString) {
+          setUseMock(false);
+          setMessage('Azure Blob Storageに接続しました');
+        } else {
+          setUseMock(true);
+          setMessage('モックリポジトリを使用します（設定ファイルに接続文字列がありません）');
+        }
+      } catch (error) {
+        console.error('設定の読み込みに失敗しました:', error);
+        setError('設定の読み込みに失敗しました');
+        setUseMock(true);
+      }
+    };
+    
+    loadConfig();
+  }, []);
 
   // ファイル選択ハンドラー
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -69,16 +104,19 @@ const FileUploader: React.FC = () => {
 
       console.log('ファイル情報:', fileInfo);
 
-      // アップロードユースケースを実行
-      const result = await Effect.runPromise(
-        uploadFileUseCase(
-          fileInfo,
-          mockFileUploadRepository,
-          mockFileHistoryRepository
-        )
-      );
-
-      setMessage('アップロードが完了しました');
+      // メインプロセスのアップロード機能を使用
+      const uploadResponse = await window.electronAPI.uploadFile(fileInfo);
+      
+      if (!uploadResponse.success) {
+        throw new Error(uploadResponse.error || 'アップロードに失敗しました');
+      }
+      
+      const result = uploadResponse.result;
+      
+      // モックか実際のAzure Blobかを表示
+      setMessage(uploadResponse.usedMock 
+        ? 'モックアップロードが完了しました' 
+        : 'Azure Blob Storageへのアップロードが完了しました');
       setUploadedUrl(result.url);
       console.log('アップロード結果:', result);
     } catch (error) {

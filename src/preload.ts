@@ -27,6 +27,16 @@ try {
     // ファイル情報取得関数
     getFileInfo: async (filePath) => {
       return ipcRenderer.invoke('file:getInfo', filePath);
+    },
+    
+    // 設定取得関数
+    getConfig: async () => {
+      return ipcRenderer.invoke('config:get');
+    },
+    
+    // ファイルアップロード関数
+    uploadFile: async (fileInfo) => {
+      return ipcRenderer.invoke('file:upload', fileInfo);
     }
   });
   console.log('electronAPIが正常に公開されました');
