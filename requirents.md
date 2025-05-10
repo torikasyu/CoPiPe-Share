@@ -1,0 +1,110 @@
+# Azure Blob Storage アップローダー仕様書
+
+# 実装の方針
+- 一気に実装を行わずに、基本的な部分からステップバイスタップで進めてください。指示されたこと以外は行わないでください。
+- 実装ステップ
+  - 01. Electronアプリが起動して、ボタンを押すとHello Worldが表示される
+  - 02. Effect-tsを使った簡単なサンプルアプリを作成。Effectはエラーハンドリングのみに使用します。下記は例です。
+```
+export type ICheckinRepository = (info: CheckinRegisterInfo) => Effect.Effect<void, RepositoryError>;
+
+export class RepositoryError extends Error {
+    readonly _tag = "RepositoryError";
+    constructor(message: string) {
+        super(message);
+    }
+}
+export const supabaseCheckinRepository: ICheckinRepository =
+    (info: CheckinRegisterInfo) =>
+        Effect.tryPromise({
+            try: async () => {
+                // 処理
+                return true;
+            },
+            catch: (error) => {
+                return new RepositoryError('不明なエラーが発生しました');
+            }
+        });
+
+```
+
+## 概要
+Azure Blob Storageにファイルを簡単にアップロードできるデスクトップアプリケーションです。ファイルをアップロードすると、Blobの公開URLが表示され、ブログやWiki等で利用することができます。
+
+## 技術スタック
+- フロントエンド: React + TypeScript
+- デスクトップアプリケーションフレームワーク: Electron
+- 状態管理: React Hooks
+- スタイリング: CSS-in-JS (styled-components)
+
+## アーキテクチャ
+- クリーンアーキテクチャを採用
+  - ドメイン層: ビジネスロジックとエンティティ
+  - アプリケーション層: ユースケース
+  - インフラストラクチャ層: 外部サービス（Azure Blob Storage）との連携
+  - プレゼンテーション層: UI（React）
+  - 各関数のインターフェースにはEffect-tsを使用してください
+- TypeScriptのクラスは利用せず、関数ベースで実装
+  - シングルトンが必要な場合は即時実行関数を使用
+- リポジトリは関数単位で単体テストが可能な設計
+  - テスト時は実際のファイルをアップロードする形でテスト（Blobのモックは不要）
+
+## 詳細仕様
+
+### 接続設定
+- Azure Blob Storageへの接続は接続文字列を使用
+- 設定はYAML形式のファイルに保存
+- 設定ファイルはユーザーが編集可能
+
+### ファイル保存構造
+- アップロードした日付を使って、「YYYY/MM」フォルダを作成し、その中にファイルを保存
+- 同一の年月で同一のファイル名がアップロードされた場合は、末尾に_02をつけて保存（例：image.png → image_02.png）
+- ファイルの拡張子に応じたContent-Typeを付与
+
+### サムネイル生成
+- 画像ファイル（jpg/png）の場合は同一フォルダにサムネイルを作成
+- サイズは横320px、縦はアスペクト比に合わせる
+- ファイル名の例：image_320.png
+
+### 対応ファイル形式
+- 画像: jpg, png（サムネイル生成あり）
+- 文書: pdf
+- その他: バイナリファイルとして扱う
+
+### 容量制限
+- アップロード可能な最大ファイルサイズ: 10MB
+
+### エラー処理
+- アップロード失敗時はエラー内容をユーザーに表示
+- 再試行機能は実装しない
+
+### アップロード履歴
+- アップロード履歴はローカルに保存
+
+## 画面構成
+
+### 1. ファイルアップロード画面
+- ファイルのドラッグ＆ドロップ機能
+- ファイル選択ボタン
+- アップロード進捗表示
+- アップロード完了後のURL表示
+- クリップボードへのURLコピー機能
+
+### 2. ファイル一覧画面
+- ファイルの一覧をサムネイル付きで表示
+- ファイル名、サイズ、アップロード日時、URLの表示
+- ファイル削除機能（ファイル本体とサムネイルを一緒に削除）
+- ファイルのソート機能（名前順、日付順）
+- ファイルの検索機能
+
+### 3. 設定画面
+- Azure Blob Storage接続文字列の設定
+- コンテナ名の設定
+- その他のアプリケーション設定
+
+## UI言語
+- 英語のみ対応
+
+## その他
+- ダークモード: 非対応
+- ログ機能: 非対応
