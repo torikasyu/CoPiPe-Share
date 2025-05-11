@@ -23,7 +23,12 @@
       "target": [
         "dmg"
       ],
-      "icon": "build/icons/icon.png"
+      "icon": "build/icons/icon.png",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.inherit.plist",
+      "notarize": true
     },
     "dmg": {
       "contents": [
@@ -37,22 +42,26 @@
           "type": "link",
           "path": "/Applications"
         }
-      ]
+      ],
+      "sign": false
     },
     "files": [
       "dist/**/*",
       "package.json",
       "index.html"
-    ]
+    ],
+    "afterSign": "scripts/notarize.js"
   },
   "author": "torikasyu",
   "license": "MIT",
   "devDependencies": {
+    "@electron/notarize": "^2.5.0",
     "@types/js-yaml": "^4.0.9",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@types/uuid": "^10.0.0",
     "concurrently": "^8.0.1",
+    "dotenv": "^16.5.0",
     "electron": "^28.0.0",
     "electron-builder": "^26.0.12",
     "ts-loader": "^9.4.2",
