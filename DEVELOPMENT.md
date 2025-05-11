@@ -99,6 +99,8 @@ npm run dev
 - `KEYCHAIN_PASSWORD`: キーチェーンのパスワード（任意の値）
 - `APPLE_ID`: Apple Developer Programのアカウントメールアドレス
 - `APPLE_APP_SPECIFIC_PASSWORD`: App固有のパスワード
+  - Apple IDの設定ページの「アプリ用パスワード」から生成できます
+  - https://account.apple.com/account/manage
 - `APPLE_TEAM_ID`: Apple Developer Teamの識別子
 
 ### 証明書の準備
