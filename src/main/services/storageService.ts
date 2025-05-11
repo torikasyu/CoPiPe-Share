@@ -32,8 +32,8 @@ const ensureContainerExists = async (containerClient: ContainerClient): Promise<
 };
 
 /**
- * 同名ファイルが存在する場合、一意のファイル名を生成します
- * 例: image.png -> image_02.png
+ * ファイル名にタイムスタンプを付与して一意のファイル名を生成します
+ * 例: image.png -> image_20250511100142.png
  */
 const ensureUniqueFileName = async (containerClient: ContainerClient, blobPath: string): Promise<string> => {
   // ファイル名を分解
@@ -46,32 +46,22 @@ const ensureUniqueFileName = async (containerClient: ContainerClient, blobPath: 
   const baseName = lastDotIndex !== -1 ? fileName.substring(0, lastDotIndex) : fileName;
   const extension = lastDotIndex !== -1 ? fileName.substring(lastDotIndex) : '';
   
-  // 同名ファイルが存在するかチェック
-  const blobClient = containerClient.getBlobClient(blobPath);
-  const exists = await blobClient.exists();
+  // 現在の日時からタイムスタンプを生成（YYYYMMDDHHmmss形式）
+  const now = new Date();
+  const timestamp = [
+    now.getFullYear(),
+    (now.getMonth() + 1).toString().padStart(2, '0'),
+    now.getDate().toString().padStart(2, '0'),
+    now.getHours().toString().padStart(2, '0'),
+    now.getMinutes().toString().padStart(2, '0'),
+    now.getSeconds().toString().padStart(2, '0')
+  ].join('');
   
-  if (!exists) {
-    return blobPath;
-  }
+  // タイムスタンプを付与したファイル名を生成
+  const newFileName = `${baseName}_${timestamp}${extension}`;
+  const newBlobPath = `${directory}${newFileName}`;
   
-  // 同名ファイルが存在する場合、連番を付与
-  let counter = 2;
-  let newBlobPath: string;
-  
-  do {
-    const newFileName = `${baseName}_${counter.toString().padStart(2, '0')}${extension}`;
-    newBlobPath = `${directory}${newFileName}`;
-    const newBlobClient = containerClient.getBlobClient(newBlobPath);
-    const newExists = await newBlobClient.exists();
-    
-    if (!newExists) {
-      return newBlobPath;
-    }
-    
-    counter++;
-  } while (counter < 100); // 最大100個までの連番を試行
-  
-  throw new Error('一意のファイル名を生成できませんでした');
+  return newBlobPath;
 };
 
 /**

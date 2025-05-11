@@ -194,11 +194,14 @@ const FileUploader: React.FC = () => {
   };
 
   // URLをクリップボードにコピー
-  const copyToClipboard = () => {
+  const copyToClipboard: React.MouseEventHandler<HTMLButtonElement> = (event) => {
     if (uploadedUrl) {
       navigator.clipboard.writeText(uploadedUrl)
         .then(() => setMessage('URLをクリップボードにコピーしました'))
-        .catch(err => setError('URLのコピーに失敗しました'));
+        .catch(err => {
+          console.error('クリップボードコピーエラー:', err);
+          setError('URLのコピーに失敗しました');
+        });
     }
   };
 
