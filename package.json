@@ -16,7 +16,7 @@
     "dist": "npm run build && electron-builder"
   },
   "build": {
-    "appId": "com.yourcompany.blobuploader",
+    "appId": "com.torikasyu.blobuploader",
     "productName": "Blob Uploader",
     "mac": {
       "category": "public.app-category.utilities",
@@ -45,7 +45,7 @@
       "index.html"
     ]
   },
-  "author": "Your Company",
+  "author": "torikasyu",
   "license": "MIT",
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",

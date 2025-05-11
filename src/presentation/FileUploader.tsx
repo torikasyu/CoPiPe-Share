@@ -106,7 +106,7 @@ const FileUploader: React.FC = () => {
           setMessage('Azure Blob Storageに接続しました');
         } else {
           setUseMock(true);
-          setMessage('モックリポジトリを使用します（設定ファイルに接続文字列がありません）');
+          setMessage('設定で接続文字列を入力してください');
         }
       } catch (error) {
         console.error('設定の読み込みに失敗しました:', error);
@@ -221,7 +221,6 @@ const FileUploader: React.FC = () => {
       tabIndex={0} // キーボードイベントを受け取るためにtabIndexを設定
       onPaste={handlePaste} // ペーストイベントをハンドル
     >
-      <h2>Azure Blob Storage アップロード</h2>
       <p>ファイルを選択するか、ctrl/command + v でクリップボードから画像をペースト</p>
       
       <div style={{ marginBottom: '20px' }}>

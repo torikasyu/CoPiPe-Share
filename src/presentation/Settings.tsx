@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { Effect } from 'effect';
 
 // 設定画面のスタイル
 const SettingsContainer = styled.div`
@@ -157,9 +156,7 @@ const Settings: React.FC = () => {
   const fileSizeInMB = maxFileSizeBytes / (1024 * 1024);
   
   return (
-    <SettingsContainer>
-      <h1>設定</h1>
-      
+    <SettingsContainer>      
       <SettingsForm onSubmit={saveConfig}>
         <h2>Azure Blob Storage 設定</h2>
         

@@ -19,23 +19,12 @@ const createWindow = () => {
       devTools: true // 開発ツールを有効化
     }
   });
-  
-  // プリロードスクリプトのパスをログ表示
-  console.log('プリロードスクリプトパス:', path.join(__dirname, '../preload.js'));
-  
-  // 開発ツールを開く（デバッグのため）
-  mainWindow.webContents.openDevTools();
-  
+    
   // レンダラープロセスのエラーをキャッチ
   mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
     console.error('ページ読み込みエラー:', errorCode, errorDescription);
   });
   
-  // レンダラープロセスのコンソールログをメインプロセスに表示
-  mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
-    console.log(`レンダラーログ [${level}]: ${message}`);
-  });
-
   // HTMLファイルをロード
   mainWindow.loadFile(path.join(__dirname, '../../index.html'));
 
@@ -52,8 +41,7 @@ app.whenReady().then(() => {
   
   createWindow();
 
-  // macOSでは、ユーザがDockアイコンをクリックしたときに
-  // ウィンドウがない場合は再作成する
+  // macOSでは、ユーザがDockアイコンをクリックしたときにウィンドウがない場合は再作成する
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();

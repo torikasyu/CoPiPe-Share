@@ -61,12 +61,21 @@ const App: React.FC = () => {
     <AppContainer>
       <Header>
         <Title>Azure Blob Storage アップローダー</Title>
-        <NavButton 
-          $active={currentScreen === 'settings'}
-          onClick={() => switchScreen('settings')}
-        >
-          設定
-        </NavButton>
+        {currentScreen === 'uploader' ? (
+          <NavButton 
+            $active={true}
+            onClick={() => switchScreen('settings')}
+          >
+            設定
+          </NavButton>
+        ) : (
+          <NavButton 
+            $active={true}
+            onClick={() => switchScreen('uploader')}
+          >
+            アップロード
+          </NavButton>
+        )}
       </Header>
       
       {currentScreen === 'uploader' && <FileUploader />}
