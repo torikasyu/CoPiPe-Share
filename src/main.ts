@@ -379,7 +379,7 @@ const createWindow = () => {
   console.log('プリロードスクリプトパス:', path.resolve(__dirname, 'preload.js'));
   
   // 開発ツールを開く（デバッグのため）
-  mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools();
   
   // レンダラープロセスのエラーをキャッチ
   mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
@@ -393,9 +393,6 @@ const createWindow = () => {
 
   // HTMLファイルをロード
   mainWindow.loadFile(path.join(__dirname, '../index.html'));
-
-  // 開発ツールを開く（開発時のみ）
-  // mainWindow.webContents.openDevTools();
 
   // ウィンドウが閉じられたときの処理
   mainWindow.on('closed', () => {

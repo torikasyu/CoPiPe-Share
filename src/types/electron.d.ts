@@ -6,6 +6,7 @@ interface Window {
     readFile: (filePath: string) => Promise<Buffer>;
     getFileInfo: (filePath: string) => Promise<any>;
     getConfig: () => Promise<any>;
+    saveConfig: (config: any) => Promise<{success: boolean}>;
     uploadFile: (fileInfo: any) => Promise<any>;
     getClipboardImage: () => Promise<any>;
     // アップロード進捗リスナーを登録する関数

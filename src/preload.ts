@@ -49,6 +49,11 @@ try {
       return ipcRenderer.invoke('config:get');
     },
     
+    // 設定保存関数
+    saveConfig: async (config) => {
+      return ipcRenderer.invoke('config:save', config);
+    },
+    
     // ファイルアップロード関数
     uploadFile: async (fileInfo) => {
       return ipcRenderer.invoke('file:upload', fileInfo);

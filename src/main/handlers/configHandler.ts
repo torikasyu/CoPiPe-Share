@@ -2,6 +2,7 @@ import { IpcMain, app } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as yaml from 'js-yaml';
+import { AppConfig } from '../../domain/config';
 
 /**
  * 設定関連のIPC通信ハンドラーを設定する関数
@@ -51,6 +52,30 @@ export const setupConfigHandlers = (ipcMain: IpcMain): void => {
       return config;
     } catch (error) {
       console.error('設定ファイルの読み込みに失敗しました:', error);
+      throw error;
+    }
+  });
+  
+  // 設定ファイルの保存
+  ipcMain.handle('config:save', async (_, config: AppConfig) => {
+    try {
+      // 設定ファイルのパス
+      const userDataPath = app.getPath('userData');
+      const configPath = path.join(userDataPath, 'config.yaml');
+      const configDir = path.dirname(configPath);
+      
+      // 設定ディレクトリが存在しない場合は作成
+      if (!fs.existsSync(configDir)) {
+        fs.mkdirSync(configDir, { recursive: true });
+      }
+      
+      // 設定をYAML形式で書き込み
+      const yamlContent = yaml.dump(config, { indent: 2 });
+      fs.writeFileSync(configPath, yamlContent, 'utf8');
+      
+      return { success: true };
+    } catch (error) {
+      console.error('設定ファイルの保存に失敗しました:', error);
       throw error;
     }
   });
