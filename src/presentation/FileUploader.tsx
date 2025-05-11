@@ -222,7 +222,7 @@ const FileUploader: React.FC = () => {
       onPaste={handlePaste} // ペーストイベントをハンドル
     >
       <h2>Azure Blob Storage アップロード</h2>
-      <p>ファイルを選択するか、Ctrl+V（またはCmd+V）でクリップボードから画像をペーストしてください。</p>
+      <p>ファイルを選択するか、ctrl/command + v でクリップボードから画像をペースト</p>
       
       <div style={{ marginBottom: '20px' }}>
         <input
@@ -336,7 +336,6 @@ const FileUploader: React.FC = () => {
           
           {thumbnailUrl && (
             <div style={{ marginTop: '20px' }}>
-              <p>サムネイル:</p>
               <div style={{ 
                 marginTop: '10px',
                 display: 'flex',
@@ -359,39 +358,6 @@ const FileUploader: React.FC = () => {
                   marginTop: '10px',
                   width: '100%'
                 }}>
-                  <input
-                    type="text"
-                    value={thumbnailUrl}
-                    readOnly
-                    style={{
-                      padding: '8px',
-                      fontSize: '14px',
-                      width: '100%',
-                      borderRadius: '4px',
-                      border: '1px solid #ccc',
-                      marginRight: '10px'
-                    }}
-                  />
-                  <button
-                    onClick={(e) => {
-                      navigator.clipboard.writeText(thumbnailUrl)
-                        .then(() => setMessage('サムネイルURLをクリップボードにコピーしました'))
-                        .catch(err => {
-                          console.error('クリップボードコピーエラー:', err);
-                          setError('サムネイルURLのコピーに失敗しました');
-                        });
-                    }}
-                    style={{
-                      padding: '8px 15px',
-                      backgroundColor: '#0078d7',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    コピー
-                  </button>
                 </div>
               </div>
             </div>
