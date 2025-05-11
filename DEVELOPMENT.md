@@ -115,6 +115,31 @@ base64 -i 証明書ファイル.p12 -o certificate.txt
 
 GitHubリポジトリの「Actions」タブから、「Build」ワークフローを手動で実行することができます。
 
+### GitHub Releasesへの公開
+
+ワークフローは、Gitタグをプッシュしたときに自動的にGitHub ReleasesにビルドされたDMGファイルを公開するように設定されています。
+
+リリースを作成する手順：
+
+1. ローカルでタグを作成します
+
+```bash
+git tag v1.0.0
+```
+
+2. タグをGitHubにプッシュします
+
+```bash
+git push origin v1.0.0
+```
+
+3. GitHub Actionsが自動的に実行され、以下の処理が行われます
+   - macOS用のDMGファイルをビルド
+   - コード署名と公証（ノータリゼーション）
+   - GitHub Releasesの作成とDMGファイルの公開
+
+これにより、タグをプッシュするだけで、署名済みのDMGファイルが自動的にGitHub Releasesに公開されます。リリースノートはコミットメッセージから自動生成されます。
+
 ### シークレットの設定方法
 
 GitHubリポジトリの「Settings」→「Secrets and variables」→「Actions」から、必要なシークレットを設定できます。
