@@ -8,6 +8,10 @@ on:
   create:
   workflow_dispatch:
 
+# GitHub Actionsに必要な権限を付与
+permissions:
+  contents: write
+
 jobs:
   build-mac:
     runs-on: macos-latest
