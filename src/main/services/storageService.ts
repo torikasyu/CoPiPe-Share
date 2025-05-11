@@ -1,6 +1,8 @@
 import { BlobServiceClient, ContainerClient, BlockBlobUploadOptions } from '@azure/storage-blob';
 import * as fs from 'fs';
+import * as path from 'path';
 import { UploadProgressInfo } from '../../domain/models';
+import { generateThumbnail, isImageFile } from '../../infrastructure/imageUtils';
 
 /**
  * ストレージ設定インターフェース
@@ -94,6 +96,18 @@ export const uploadToAzureStorage = async (
   // 同名ファイルが存在するかチェック
   const uniqueBlobPath = await ensureUniqueFileName(containerClient, blobPath);
   
+  // サムネイル生成（画像ファイルの場合）
+  let thumbnailPath = null;
+  if (isImageFile(fileInfo.path)) {
+    try {
+      thumbnailPath = await generateThumbnail(fileInfo.path);
+      console.log(`サムネイル生成成功: ${thumbnailPath}`);
+    } catch (error) {
+      console.error('サムネイル生成エラー:', error);
+      // サムネイル生成に失敗しても、元ファイルのアップロードは続行
+    }
+  }
+
   // ファイルをアップロード
   const blockBlobClient = containerClient.getBlockBlobClient(uniqueBlobPath);
   
@@ -136,19 +150,44 @@ export const uploadToAzureStorage = async (
   
   // 画像ファイルの場合はサムネイルURLも設定
   const isImage = /\.(jpg|jpeg|png)$/i.test(fileInfo.name);
-  if (isImage) {
-    // サムネイルのパスを生成
-    const fileNameWithoutExt = fileInfo.name.substring(0, fileInfo.name.lastIndexOf('.'));
-    const fileExt = fileInfo.name.substring(fileInfo.name.lastIndexOf('.'));
-    const thumbnailName = `${fileNameWithoutExt}_320${fileExt}`;
-    const thumbnailPath = `${year}/${month}/${thumbnailName}`;
-    
-    // サムネイルURLを設定
-    if (config.baseUrl) {
-      result.thumbnailUrl = `${config.baseUrl}/${thumbnailPath}`;
-    } else {
-      const thumbnailBlobClient = containerClient.getBlockBlobClient(thumbnailPath);
-      result.thumbnailUrl = thumbnailBlobClient.url;
+  if (isImage && thumbnailPath) {
+    try {
+      // サムネイルのファイル名を取得
+      const thumbnailFileName = path.basename(thumbnailPath);
+      const thumbnailBlobPath = `${year}/${month}/${thumbnailFileName}`;
+      
+      // サムネイルをアップロード
+      const thumbnailBlobClient = containerClient.getBlockBlobClient(thumbnailBlobPath);
+      const thumbnailContent = await fs.promises.readFile(thumbnailPath);
+      
+      // サムネイルのContent-Typeを設定
+      const thumbnailOptions: BlockBlobUploadOptions = {
+        blobHTTPHeaders: {
+          blobContentType: fileInfo.mimeType
+        }
+      };
+      
+      // サムネイルをアップロード
+      await thumbnailBlobClient.upload(thumbnailContent, thumbnailContent.length, thumbnailOptions);
+      
+      // サムネイルURLを設定
+      if (config.baseUrl) {
+        result.thumbnailUrl = `${config.baseUrl}/${thumbnailBlobPath}`;
+      } else {
+        result.thumbnailUrl = thumbnailBlobClient.url;
+      }
+      
+      console.log(`サムネイルアップロード成功: ${result.thumbnailUrl}`);
+      
+      // 一時ファイルを削除
+      try {
+        await fs.promises.unlink(thumbnailPath);
+      } catch (unlinkError) {
+        console.error('サムネイル一時ファイル削除エラー:', unlinkError);
+      }
+    } catch (thumbnailUploadError) {
+      console.error('サムネイルアップロードエラー:', thumbnailUploadError);
+      // サムネイルアップロードに失敗しても、結果は返す
     }
   }
   
@@ -197,9 +236,47 @@ export const uploadToMockStorage = async (
   // 画像ファイルの場合はサムネイルURLも設定
   const isImage = /\.(jpg|jpeg|png)$/i.test(fileInfo.name);
   if (isImage) {
-    const fileNameWithoutExt = fileInfo.name.substring(0, fileInfo.name.lastIndexOf('.'));
-    const fileExt = fileInfo.name.substring(fileInfo.name.lastIndexOf('.'));
-    result.thumbnailUrl = `https://example.com/mock/${fileNameWithoutExt}_320${fileExt}`;
+    try {
+      // 実際にサムネイルを生成（モックでも実際のファイルを使用）
+      if (fileInfo.path && fs.existsSync(fileInfo.path)) {
+        const thumbnailPath = await generateThumbnail(fileInfo.path);
+        console.log(`モックサムネイル生成成功: ${thumbnailPath}`);
+        
+        // サムネイルのファイル名を取得
+        const thumbnailFileName = path.basename(thumbnailPath);
+        result.thumbnailUrl = `https://example.com/mock/${thumbnailFileName}`;
+        
+        // 一時ファイルを削除
+        try {
+          await fs.promises.unlink(thumbnailPath);
+        } catch (unlinkError) {
+          console.error('モックサムネイル一時ファイル削除エラー:', unlinkError);
+        }
+      } else {
+        // ファイルパスがない場合は従来のモック処理
+        const fileNameWithoutExt = fileInfo.name.substring(0, fileInfo.name.lastIndexOf('.'));
+        const fileExt = fileInfo.name.substring(fileInfo.name.lastIndexOf('.'));
+        
+        // 現在の日時からタイムスタンプを生成（YYYYMMDDHHmmss形式）
+        const now = new Date();
+        const timestamp = [
+          now.getFullYear(),
+          (now.getMonth() + 1).toString().padStart(2, '0'),
+          now.getDate().toString().padStart(2, '0'),
+          now.getHours().toString().padStart(2, '0'),
+          now.getMinutes().toString().padStart(2, '0'),
+          now.getSeconds().toString().padStart(2, '0')
+        ].join('');
+        
+        result.thumbnailUrl = `https://example.com/mock/${fileNameWithoutExt}_${timestamp}_320${fileExt}`;
+      }
+    } catch (error) {
+      console.error('モックサムネイル生成エラー:', error);
+      // エラーが発生した場合は従来のモック処理
+      const fileNameWithoutExt = fileInfo.name.substring(0, fileInfo.name.lastIndexOf('.'));
+      const fileExt = fileInfo.name.substring(fileInfo.name.lastIndexOf('.'));
+      result.thumbnailUrl = `https://example.com/mock/${fileNameWithoutExt}_320${fileExt}`;
+    }
   }
   
   return result;
