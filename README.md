@@ -1,10 +1,11 @@
-# Azure Blob Uploader - ユーザーマニュアル
+# CoPiPe-Share - ユーザーマニュアル
 
-Azure Blob Uploader は、画像をコピー＆ペーストするだけで簡単にAzure Blob Storageにアップロードできるデスクトップアプリケーションです。
+CoPiPe-Shareは、画像をコピー＆ペーストするだけで簡単にクラウドにアップロードして共有できるデスクトップアプリケーションです。
 オンラインメモツールで画像の実体を保存したくないときや、URLだけで画像を共有したいときなどにお使いください。
 また、画像以外のファイルも簡単にアップロードできます。
 
 ※URLは誰でも閲覧可能になりますので、機密情報は含めないでください
+※対応しているのはAzure Blob Storageのみです。将来的にS3に対応予定です。
 
 ## 目次
 
@@ -19,9 +20,9 @@ Azure Blob Uploader は、画像をコピー＆ペーストするだけで簡単
 
 1. リリースページから最新バージョンをダウンロードします
 2. ダウンロードしたインストーラーを実行します
-   - （未対応）Windows: `AzureBlobUploader-Setup-x.x.x.exe`をダブルクリック
-   - macOS: `AzureBlobUploader-x.x.x.dmg`をダブルクリックし、アプリケーションフォルダにドラッグ＆ドロップ
-   - （未対応）Linux: `AzureBlobUploader-x.x.x.AppImage`に実行権限を付与して実行
+   - Windows: （未対応。ビルドしてお使いください）
+   - macOS: `CoPiPe-Share-x.x.x.dmg`をダブルクリックし、アプリケーションフォルダにドラッグ＆ドロップ
+   - Linux: （未対応。ビルドしてお使いください）
 
 ## Azure Blob Storageの設定方法
 1. Azureアカウントを取得します

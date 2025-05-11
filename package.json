@@ -1,7 +1,7 @@
 {
-  "name": "blob-uploader",
+  "name": "copipe-share",
   "version": "1.0.0",
-  "description": "Azure Blob Storageにファイルをアップロードするデスクトップアプリケーション",
+  "description": "画像やファイルをクラウドにアップロードして共有するデスクトップアプリケーション",
   "main": "dist/main/index.js",
   "scripts": {
     "start": "electron .",
@@ -16,8 +16,8 @@
     "dist": "npm run build && electron-builder"
   },
   "build": {
-    "appId": "com.torikasyu.blobuploader",
-    "productName": "Blob Uploader",
+    "appId": "com.torikasyu.copipeshare",
+    "productName": "CoPiPe-Share",
     "mac": {
       "category": "public.app-category.utilities",
       "target": [
