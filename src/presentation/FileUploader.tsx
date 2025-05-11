@@ -1,6 +1,6 @@
 import React, { useState, useRef, ChangeEvent, useEffect, ClipboardEvent } from 'react';
 import { Effect } from 'effect';
-import { FileInfo } from '../domain/models';
+import { FileInfo, UploadProgressInfo } from '../domain/models';
 import { getFileInfo } from '../infrastructure/fileHelper';
 import { uploadFileUseCase } from '../application/usecases';
 import { mockFileUploadRepository, mockFileHistoryRepository } from '../infrastructure/mockRepositories';
@@ -18,8 +18,10 @@ const FileUploader: React.FC = () => {
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [useMock, setUseMock] = useState<boolean>(true);
+  const [uploadProgress, setUploadProgress] = useState<UploadProgressInfo | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const progressCleanupRef = useRef<(() => void) | null>(null);
   
   // クリップボードから画像をペーストする処理
   const handlePaste = async (event: ClipboardEvent<HTMLDivElement>) => {
@@ -61,6 +63,27 @@ const FileUploader: React.FC = () => {
       }
     }
   };
+  
+  // アップロード進捗リスナーを設定
+  useEffect(() => {
+    if (window.electronAPI) {
+      // 進捗リスナーを登録
+      const cleanup = window.electronAPI.onUploadProgress((progress: UploadProgressInfo) => {
+        console.log('アップロード進捗:', progress);
+        setUploadProgress(progress);
+      });
+      
+      // クリーンアップ関数を保存
+      progressCleanupRef.current = cleanup;
+      
+      return () => {
+        // コンポーネントアンマウント時にリスナーを削除
+        if (progressCleanupRef.current) {
+          progressCleanupRef.current();
+        }
+      };
+    }
+  }, []);
   
   // 設定を読み込む
   useEffect(() => {
@@ -109,6 +132,7 @@ const FileUploader: React.FC = () => {
       setMessage('ファイルをアップロード中...');
       setError(null);
       setUploadedUrl(null);
+      setUploadProgress(null);
 
       // Electron APIが利用可能か確認
       if (!window.electronAPI) {
@@ -217,6 +241,36 @@ const FileUploader: React.FC = () => {
       {isUploading && (
         <div style={{ marginTop: '20px' }}>
           <p>アップロード中...</p>
+          {uploadProgress && (
+            <div style={{ marginTop: '10px' }}>
+              <div style={{ 
+                width: '100%', 
+                height: '20px', 
+                backgroundColor: '#e0e0e0',
+                borderRadius: '4px',
+                overflow: 'hidden'
+              }}>
+                <div style={{
+                  width: `${uploadProgress.percentage}%`,
+                  height: '100%',
+                  backgroundColor: '#0078d7',
+                  transition: 'width 0.3s ease'
+                }} />
+              </div>
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between',
+                marginTop: '5px',
+                fontSize: '14px'
+              }}>
+                <span>{uploadProgress.percentage}%</span>
+                <span>
+                  {Math.round(uploadProgress.bytesTransferred / 1024).toLocaleString()} KB / 
+                  {Math.round(uploadProgress.totalBytes / 1024).toLocaleString()} KB
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       )}
       

@@ -159,64 +159,67 @@ function setupIpcHandlers() {
   });
   
   // ファイルアップロード処理
-  ipcMain.handle('file:upload', async (_, fileInfo) => {
+  ipcMain.handle('file:upload', async (event, fileInfo) => {
     try {
-      // 設定を取得
+      // 設定を読み込み
       const userDataPath = app.getPath('userData');
       const configPath = path.join(userDataPath, 'config.yaml');
       const yamlContent = fs.readFileSync(configPath, 'utf8');
-      const config = yaml.load(yamlContent) as {
-        azureStorage: {
-          connectionString: string;
-          containerName: string;
-          baseUrl?: string;
-        };
-        general: {
-          maxFileSizeBytes: number;
-          supportedImageFormats: string[];
-          supportedDocumentFormats: string[];
-        };
+      const config = yaml.load(yamlContent) as any;
+      
+      // 進捗情報をレンダラープロセスに送信する関数
+      const sendProgress = (progress: any) => {
+        if (event.sender.isDestroyed()) return;
+        event.sender.send('upload:progress', progress);
       };
       
-      // 接続文字列が設定されているか確認
-      const useMock = !config.azureStorage.connectionString;
-      
-      // ファイルの内容を読み込み
-      const fileContent = await fs.promises.readFile(fileInfo.path);
-      
-      // モックまたはAzure Blob Storageを使用してアップロード
-      if (useMock) {
-        // モックアップロード
-        await new Promise(resolve => setTimeout(resolve, 1000)); // 遅延をシミュレート
+      // 接続文字列が設定されていない場合はモックを使用
+      if (!config.azureStorage.connectionString) {
+        console.log('モックリポジトリを使用してアップロードします');
         
-        // 画像ファイルかどうかを判定
-        const isImage = /\.(jpg|jpeg|png)$/i.test(fileInfo.name);
+        // モックの進捗表示をシミュレート
+        const totalBytes = fileInfo.size;
+        const steps = 10;
         
-        // アップロード結果を生成
-        const result: {
-          fileInfo: any;
-          url: string;
-          uploadedAt: Date;
-          thumbnailUrl?: string;
-        } = {
+        for (let i = 1; i <= steps; i++) {
+          // モックの進捗情報を送信
+          const bytesTransferred = Math.floor((i / steps) * totalBytes);
+          const percentage = Math.floor((i / steps) * 100);
+          
+          sendProgress({
+            bytesTransferred,
+            totalBytes,
+            fileName: fileInfo.name,
+            percentage
+          });
+          
+          // 少し遅延を入れて進捗をシミュレート
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+        
+        // モックリポジトリを使用してアップロード
+        const mockResult: any = {
           fileInfo,
-          url: `https://example.blob.core.windows.net/container/${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, '0')}/${fileInfo.name}`,
-          uploadedAt: new Date(),
+          url: `https://example.com/mock/${fileInfo.name}`,
+          uploadedAt: new Date()
         };
         
-        // 画像ファイルの場合はサムネイルURLも追加
+        // 画像ファイルの場合はサムネイルURLも設定
+        const isImage = /\.(jpg|jpeg|png)$/i.test(fileInfo.name);
         if (isImage) {
           const fileNameWithoutExt = fileInfo.name.substring(0, fileInfo.name.lastIndexOf('.'));
           const fileExt = fileInfo.name.substring(fileInfo.name.lastIndexOf('.'));
-          result.thumbnailUrl = `https://example.blob.core.windows.net/container/${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, '0')}/${fileNameWithoutExt}_320${fileExt}`;
+          mockResult.thumbnailUrl = `https://example.com/mock/${fileNameWithoutExt}_320${fileExt}`;
         }
         
         return {
           success: true,
-          result,
+          result: mockResult,
           usedMock: true
         };
       } else {
+        console.log('Azure Blob Storageにアップロードします');
+        
         // Azure Blob Storageにアップロード
         const { BlobServiceClient } = require('@azure/storage-blob');
         
@@ -236,7 +239,7 @@ function setupIpcHandlers() {
         const now = new Date();
         const year = now.getFullYear().toString();
         const month = (now.getMonth() + 1).toString().padStart(2, '0');
-        const blobPath = `${year}/${month}/${fileInfo.name}`;
+        let blobPath = `${year}/${month}/${fileInfo.name}`;
         
         // 同名ファイルが存在するかチェック
         let uniqueBlobPath = blobPath;
@@ -244,26 +247,46 @@ function setupIpcHandlers() {
         let blobClient = containerClient.getBlockBlobClient(uniqueBlobPath);
         let exists = await blobClient.exists();
         
-        // 同名ファイルが存在する場合、連番を付与
         while (exists && counter < 100) {
-          const lastDotIndex = fileInfo.name.lastIndexOf('.');
-          const baseName = lastDotIndex !== -1 ? fileInfo.name.substring(0, lastDotIndex) : fileInfo.name;
-          const extension = lastDotIndex !== -1 ? fileInfo.name.substring(lastDotIndex) : '';
+          // ファイル名を分解
+          const lastSlashIndex = blobPath.lastIndexOf('/');
+          const directory = blobPath.substring(0, lastSlashIndex + 1);
+          const fileName = blobPath.substring(lastSlashIndex + 1);
+          
+          // 拡張子を分離
+          const lastDotIndex = fileName.lastIndexOf('.');
+          const baseName = lastDotIndex !== -1 ? fileName.substring(0, lastDotIndex) : fileName;
+          const extension = lastDotIndex !== -1 ? fileName.substring(lastDotIndex) : '';
+          
+          // 連番を付与
           const newFileName = `${baseName}_${counter.toString().padStart(2, '0')}${extension}`;
-          uniqueBlobPath = `${year}/${month}/${newFileName}`;
+          uniqueBlobPath = `${directory}${newFileName}`;
           blobClient = containerClient.getBlockBlobClient(uniqueBlobPath);
           exists = await blobClient.exists();
           counter++;
         }
         
+        // ファイルを読み込み
+        const fileContent = await fs.promises.readFile(fileInfo.path);
+        
         // Content-Typeを設定
         const options = {
           blobHTTPHeaders: {
             blobContentType: fileInfo.mimeType
+          },
+          onProgress: (progress: any) => {
+            // 進捗情報をレンダラープロセスに送信
+            sendProgress({
+              bytesTransferred: progress.loadedBytes,
+              totalBytes: fileContent.length,
+              fileName: fileInfo.name,
+              percentage: Math.round((progress.loadedBytes / fileContent.length) * 100)
+            });
           }
         };
         
         // アップロード
+        blobClient = containerClient.getBlockBlobClient(uniqueBlobPath);
         await blobClient.upload(fileContent, fileContent.length, options);
         
         // 公開URLを生成

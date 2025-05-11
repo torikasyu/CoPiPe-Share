@@ -1,6 +1,6 @@
 import { Effect } from 'effect';
-import { BlobServiceClient, ContainerClient, StorageSharedKeyCredential } from '@azure/storage-blob';
-import { FileInfo, UploadResult } from '../domain/models';
+import { BlobServiceClient, ContainerClient, StorageSharedKeyCredential, BlockBlobUploadOptions } from '@azure/storage-blob';
+import { FileInfo, UploadResult, UploadProgressInfo } from '../domain/models';
 import { RepositoryError, UploadError, FileProcessingError } from '../domain/errors';
 import { IFileUploadRepository } from '../application/repositories';
 import { AzureStorageConfig } from '../domain/config';
@@ -9,8 +9,13 @@ import { readFileContent } from './fileHelper';
 /**
  * Azure Blob Storageリポジトリの実装
  * 実際のAzure Blob Storageにファイルをアップロードします
+ * @param config Azure Storageの設定
+ * @param onProgress アップロード進捗を通知するコールバック関数（オプション）
  */
-export const createAzureBlobRepository = (config: AzureStorageConfig): IFileUploadRepository => {
+export const createAzureBlobRepository = (
+  config: AzureStorageConfig,
+  onProgress?: (progress: UploadProgressInfo) => void
+): IFileUploadRepository => {
   return (fileInfo: FileInfo) => {
     return Effect.tryPromise({
       try: async () => {
@@ -47,8 +52,22 @@ export const createAzureBlobRepository = (config: AzureStorageConfig): IFileUplo
           const fileContentEffect = readFileContent(fileInfo.path);
           const fileContent = await Effect.runPromise(fileContentEffect);
           
+          // アップロードオプションを設定
+          const uploadOptions: BlockBlobUploadOptions = {
+            ...options,
+            onProgress: onProgress ? (progress) => {
+              // 進捗情報をコールバックで通知
+              onProgress({
+                bytesTransferred: progress.loadedBytes,
+                totalBytes: fileContent.length,
+                fileName: fileInfo.name,
+                percentage: Math.round((progress.loadedBytes / fileContent.length) * 100)
+              });
+            } : undefined
+          };
+          
           // アップロード
-          await blockBlobClient.upload(fileContent, fileContent.length, options);
+          await blockBlobClient.upload(fileContent, fileContent.length, uploadOptions);
           
           // 公開URLを生成
           let url = blockBlobClient.url;

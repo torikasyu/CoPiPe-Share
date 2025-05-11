@@ -34,3 +34,20 @@ export type UploadResult = {
   /** アップロード日時 */
   uploadedAt: Date;
 };
+
+/**
+ * アップロード進捗情報を表すモデル
+ */
+export type UploadProgressInfo = {
+  /** 転送済みバイト数 */
+  bytesTransferred: number;
+  
+  /** 合計バイト数 */
+  totalBytes: number;
+  
+  /** ファイル名 */
+  fileName: string;
+  
+  /** 進捗率（0-100） */
+  percentage: number;
+};
