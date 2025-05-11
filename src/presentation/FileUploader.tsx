@@ -16,6 +16,7 @@ const FileUploader: React.FC = () => {
   const [message, setMessage] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [useMock, setUseMock] = useState<boolean>(true);
   const [uploadProgress, setUploadProgress] = useState<UploadProgressInfo | null>(null);
@@ -40,6 +41,7 @@ const FileUploader: React.FC = () => {
         setMessage('クリップボードから画像を取得中...');
         setError(null);
         setUploadedUrl(null);
+        setThumbnailUrl(null);
         
         // クリップボードから画像を取得
         const clipboardResult = await window.electronAPI.getClipboardImage();
@@ -132,6 +134,7 @@ const FileUploader: React.FC = () => {
       setMessage('ファイルをアップロード中...');
       setError(null);
       setUploadedUrl(null);
+      setThumbnailUrl(null);
       setUploadProgress(null);
 
       // Electron APIが利用可能か確認
@@ -184,6 +187,12 @@ const FileUploader: React.FC = () => {
         ? 'モックアップロードが完了しました' 
         : 'Azure Blob Storageへのアップロードが完了しました');
       setUploadedUrl(result.url);
+      
+      // サムネイルURLが存在する場合は保存
+      if (result.thumbnailUrl) {
+        setThumbnailUrl(result.thumbnailUrl);
+      }
+      
       console.log('アップロード結果:', result);
     } catch (error) {
       console.error('アップロードエラー:', error);
@@ -324,6 +333,69 @@ const FileUploader: React.FC = () => {
               コピー
             </button>
           </div>
+          
+          {thumbnailUrl && (
+            <div style={{ marginTop: '20px' }}>
+              <p>サムネイル:</p>
+              <div style={{ 
+                marginTop: '10px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start'
+              }}>
+                <img 
+                  src={thumbnailUrl} 
+                  alt="サムネイル" 
+                  style={{
+                    maxWidth: '320px',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                  }}
+                />
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center',
+                  marginTop: '10px',
+                  width: '100%'
+                }}>
+                  <input
+                    type="text"
+                    value={thumbnailUrl}
+                    readOnly
+                    style={{
+                      padding: '8px',
+                      fontSize: '14px',
+                      width: '100%',
+                      borderRadius: '4px',
+                      border: '1px solid #ccc',
+                      marginRight: '10px'
+                    }}
+                  />
+                  <button
+                    onClick={(e) => {
+                      navigator.clipboard.writeText(thumbnailUrl)
+                        .then(() => setMessage('サムネイルURLをクリップボードにコピーしました'))
+                        .catch(err => {
+                          console.error('クリップボードコピーエラー:', err);
+                          setError('サムネイルURLのコピーに失敗しました');
+                        });
+                    }}
+                    style={{
+                      padding: '8px 15px',
+                      backgroundColor: '#0078d7',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    コピー
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

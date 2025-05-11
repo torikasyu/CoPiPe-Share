@@ -354,8 +354,25 @@ const createWindow = () => {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false, // サンドボックスを無効化してプリロードスクリプトでNode.jsモジュールを使用可能に
-      devTools: true // 開発ツールを有効化
+      devTools: true, // 開発ツールを有効化
+      webSecurity: true // Webセキュリティを有効化（CSPは別途設定）
     }
+  });
+  
+  // コンテンツセキュリティポリシー（CSP）を設定
+  // img-srcに'self'と'https:'を追加して外部画像の読み込みを許可
+  mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [
+          "default-src 'self';", 
+          "script-src 'self';", 
+          "img-src 'self' https: blob: data:;", // 外部画像、Blob URL、Data URLを許可
+          "style-src 'self' 'unsafe-inline';"
+        ]
+      }
+    });
   });
   
   // プリロードスクリプトのパスをログ表示
