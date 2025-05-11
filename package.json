@@ -23,11 +23,11 @@
       "target": [
         "dmg"
       ],
-      "icon": "build/icons/icon.png",
+      "icon": "resources/build-assets/icons/icon.png",
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
-      "entitlements": "build/entitlements.mac.plist",
-      "entitlementsInherit": "build/entitlements.mac.inherit.plist",
+      "entitlements": "resources/build-assets/entitlements/entitlements.mac.plist",
+      "entitlementsInherit": "resources/build-assets/entitlements/entitlements.mac.inherit.plist",
       "notarize": true
     },
     "dmg": {

@@ -27,50 +27,21 @@ jobs:
       - name: Build application
         run: npm run build
       
-      - name: Create build directory and entitlements files
+      - name: Create build directory and copy build assets
         run: |
-          mkdir -p build
-          cat > build/entitlements.mac.plist << 'EOL'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-            <dict>
-              <key>com.apple.security.cs.allow-jit</key>
-              <true/>
-              <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
-              <true/>
-              <key>com.apple.security.cs.allow-dyld-environment-variables</key>
-              <true/>
-              <key>com.apple.security.network.client</key>
-              <true/>
-              <key>com.apple.security.files.user-selected.read-write</key>
-              <true/>
-            </dict>
-          </plist>
-          EOL
-          
-          cat > build/entitlements.mac.inherit.plist << 'EOL'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-            <dict>
-              <key>com.apple.security.cs.allow-jit</key>
-              <true/>
-              <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
-              <true/>
-              <key>com.apple.security.cs.allow-dyld-environment-variables</key>
-              <true/>
-              <key>com.apple.security.network.client</key>
-              <true/>
-              <key>com.apple.security.inherit</key>
-              <true/>
-            </dict>
-          </plist>
-          EOL
-          
+          mkdir -p build/icons
+          # entitlementsファイルをコピー
+          cp resources/build-assets/entitlements/entitlements.mac.plist build/
+          cp resources/build-assets/entitlements/entitlements.mac.inherit.plist build/
+          # アイコンファイルをコピー
+          cp resources/build-assets/icons/icon.png build/icons/
+          # パーミッションを設定
           chmod 644 build/entitlements.mac.plist
           chmod 644 build/entitlements.mac.inherit.plist
+          chmod 644 build/icons/icon.png
+          # ファイルの確認
           ls -la build/
+          ls -la build/icons/
       
       - name: Import Code-Signing Certificates
         if: github.event_name != 'pull_request'
