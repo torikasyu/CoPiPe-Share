@@ -74,3 +74,54 @@ npm start
 ```bash
 npm run dev
 ```
+
+## GitHub Actionsによるビルド
+
+このプロジェクトではGitHub Actionsを使用して、macOS用のDMGファイルを自動的にビルドする設定が含まれています。
+
+### ワークフローの概要
+
+`.github/workflows/build.yml`ファイルには、以下の処理を行うワークフローが定義されています：
+
+- macOS環境でのビルド
+- 依存パッケージのインストール
+- アプリケーションのビルド
+- コード署名と公証（ノータリゼーション）
+- DMGファイルの生成
+- ビルド成果物のアップロード
+
+### コード署名の設定
+
+コード署名と公証を行うには、以下のGitHubシークレットを設定する必要があります：
+
+- `MACOS_CERTIFICATE`: Base64エンコードされた.p12証明書ファイル
+- `MACOS_CERTIFICATE_PWD`: 証明書のパスワード
+- `KEYCHAIN_PASSWORD`: キーチェーンのパスワード（任意の値）
+- `APPLE_ID`: Apple Developer Programのアカウントメールアドレス
+- `APPLE_APP_SPECIFIC_PASSWORD`: App固有のパスワード
+- `APPLE_TEAM_ID`: Apple Developer Teamの識別子
+
+### 証明書の準備
+
+証明書ファイルをBase64エンコードするには、以下のコマンドを使用します：
+
+```bash
+base64 -i 証明書ファイル.p12 -o certificate.txt
+```
+
+`certificate.txt`の内容をコピーして、GitHubのシークレットとして設定します。
+
+### ワークフローの手動実行
+
+GitHubリポジトリの「Actions」タブから、「Build」ワークフローを手動で実行することができます。
+
+### シークレットの設定方法
+
+GitHubリポジトリの「Settings」→「Secrets and variables」→「Actions」から、必要なシークレットを設定できます。
+
+1. 「New repository secret」ボタンをクリックします
+2. 「Name」フィールドにシークレット名（例：`MACOS_CERTIFICATE`）を入力します
+3. 「Value」フィールドに値を入力します
+4. 「Add secret」ボタンをクリックして保存します
+
+各シークレットを追加するまで、上記の手順を繰り返します。シークレットは暗号化されて保存され、権限のあるワークフローでのみ使用できます。プルリクエストから派生したフォークのワークフローには、セキュリティ上の理由からシークレットは渡されません。
