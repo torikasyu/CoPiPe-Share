@@ -1,10 +1,93 @@
-import { app, BrowserWindow, dialog, ipcMain, clipboard, nativeImage } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, clipboard, nativeImage, Menu } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as yaml from 'js-yaml';
 
 // メインウィンドウの参照をグローバルに保持
 let mainWindow: BrowserWindow | null = null;
+
+// macOS用のアプリケーションメニューを設定
+function setupApplicationMenu() {
+  const isMac = process.platform === 'darwin';
+  
+  const template = [
+    // アプリメニュー（macOSのみ）
+    ...(isMac ? [{
+      label: app.name,
+      submenu: [
+        { role: 'about', label: 'このアプリについて' },
+        { type: 'separator' },
+        { role: 'services', label: 'サービス' },
+        { type: 'separator' },
+        { role: 'hide', label: '隠す' },
+        { role: 'hideOthers', label: '他を隠す' },
+        { role: 'unhide', label: 'すべて表示' },
+        { type: 'separator' },
+        { role: 'quit', label: '終了' }
+      ]
+    }] : []),
+    // ファイルメニュー
+    {
+      label: 'ファイル',
+      submenu: [
+        isMac ? { role: 'close', label: '閉じる' } : { role: 'quit', label: '終了' }
+      ]
+    },
+    // 編集メニュー
+    {
+      label: '編集',
+      submenu: [
+        { role: 'undo', label: '元に戻す' },
+        { role: 'redo', label: 'やり直す' },
+        { type: 'separator' },
+        { role: 'cut', label: '切り取り' },
+        { role: 'copy', label: 'コピー' },
+        { role: 'paste', label: '貼り付け' },
+        ...(isMac ? [
+          { role: 'pasteAndMatchStyle', label: 'スタイルを合わせて貼り付け' },
+          { role: 'delete', label: '削除' },
+          { role: 'selectAll', label: 'すべて選択' },
+        ] : [
+          { role: 'delete', label: '削除' },
+          { type: 'separator' },
+          { role: 'selectAll', label: 'すべて選択' }
+        ])
+      ]
+    },
+    // 表示メニュー
+    {
+      label: '表示',
+      submenu: [
+        { role: 'reload', label: '再読み込み' },
+        { role: 'forceReload', label: '強制再読み込み' },
+        { role: 'toggleDevTools', label: '開発者ツール' },
+        { type: 'separator' },
+        { role: 'resetZoom', label: 'ズームをリセット' },
+        { role: 'zoomIn', label: '拡大' },
+        { role: 'zoomOut', label: '縮小' },
+        { type: 'separator' },
+        { role: 'togglefullscreen', label: 'フルスクリーン' }
+      ]
+    },
+    // ウィンドウメニュー
+    {
+      label: 'ウィンドウ',
+      submenu: [
+        { role: 'minimize', label: '最小化' },
+        { role: 'zoom', label: 'ズーム' },
+        ...(isMac ? [
+          { type: 'separator' },
+          { role: 'front', label: '前面に表示' },
+        ] : [
+          { role: 'close', label: '閉じる' }
+        ])
+      ]
+    }
+  ];
+
+  const menu = Menu.buildFromTemplate(template as any);
+  Menu.setApplicationMenu(menu);
+}
 
 // IPC通信のハンドラを設定
 function setupIpcHandlers() {
@@ -404,6 +487,9 @@ const createWindow = () => {
 app.whenReady().then(() => {
   // IPC通信のハンドラを設定
   setupIpcHandlers();
+  
+  // macOS用のアプリケーションメニューを設定
+  setupApplicationMenu();
   
   createWindow();
 
