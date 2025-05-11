@@ -64,7 +64,7 @@ jobs:
       - name: Upload DMG artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mac-dmg
+          name: Blob-Uploader-${{ github.ref_name }}-mac
           path: dist/*.dmg
           retention-days: 5
       
