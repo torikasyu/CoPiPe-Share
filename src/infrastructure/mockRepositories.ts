@@ -1,7 +1,7 @@
 import { Effect } from 'effect';
 import { FileInfo, UploadResult } from '../domain/models';
 import { RepositoryError, UploadError } from '../domain/errors';
-import { IFileHistoryRepository, IFileUploadRepository } from '../application/repositories';
+import { IFileHistoryRepository, IFileUploadRepository } from './types';
 
 /**
  * モックファイルアップロードリポジトリ

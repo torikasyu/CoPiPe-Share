@@ -2,7 +2,7 @@ import { Effect } from 'effect';
 import { BlobServiceClient, ContainerClient, StorageSharedKeyCredential, BlockBlobUploadOptions } from '@azure/storage-blob';
 import { FileInfo, UploadResult, UploadProgressInfo } from '../domain/models';
 import { RepositoryError, UploadError, FileProcessingError } from '../domain/errors';
-import { IFileUploadRepository } from '../application/repositories';
+import { IFileUploadRepository } from './types';
 import { AzureStorageConfig } from '../domain/config';
 import { readFileContent } from './fileHelper';
 
