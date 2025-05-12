@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as yaml from 'js-yaml';
 import { uploadToAzureStorage, uploadToMockStorage } from '../services/storageService';
 import { UploadProgressInfo } from '../../domain/models';
+import { AppConfig } from '../../domain/config';
 
 /**
  * アップロード関連のIPC通信ハンドラーを設定する関数
@@ -17,7 +18,7 @@ export const setupUploadHandlers = (ipcMain: IpcMain): void => {
       const userDataPath = app.getPath('userData');
       const configPath = path.join(userDataPath, 'config.yaml');
       const yamlContent = fs.readFileSync(configPath, 'utf8');
-      const config = yaml.load(yamlContent) as any;
+      const config = yaml.load(yamlContent) as AppConfig;
       
       // 進捗情報をレンダラープロセスに送信する関数
       const sendProgress = (progress: UploadProgressInfo) => {

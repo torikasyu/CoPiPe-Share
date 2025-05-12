@@ -2,7 +2,7 @@ import React, { useState, useRef, ChangeEvent, useEffect, ClipboardEvent } from 
 import { Effect } from 'effect';
 import { FileInfo, UploadProgressInfo } from '../domain/models';
 import { getFileInfo } from '../infrastructure/fileHelper';
-import { uploadFileUseCase } from '../application/usecases';
+import { uploadFileUseCase } from '../usecases/uploadFileUseCase'
 import { mockFileUploadRepository, mockFileHistoryRepository } from '../infrastructure/mockRepositories';
 import { createAzureBlobRepository } from '../infrastructure/azureBlobRepository';
 import { AppConfig } from '../domain/config';

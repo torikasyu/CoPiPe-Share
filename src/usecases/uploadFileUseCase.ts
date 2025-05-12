@@ -1,7 +1,7 @@
 import { Effect } from 'effect';
 import { FileInfo, UploadResult } from '../domain/models';
 import { FileProcessingError, RepositoryError, UploadError } from '../domain/errors';
-import { IFileHistoryRepository, IFileUploadRepository } from './repositories';
+import { IFileHistoryRepository, IFileUploadRepository } from '../infrastructure/types';
 
 /**
  * ファイルアップロードユースケース
@@ -35,25 +35,4 @@ export const uploadFileUseCase = (
       throw new FileProcessingError('不明なエラーが発生しました');
     }
   });
-};
-
-/**
- * ファイル履歴取得ユースケース
- * アップロード履歴を取得する
- */
-export const getFileHistoryUseCase = (
-  fileHistoryRepository: IFileHistoryRepository
-): Effect.Effect<UploadResult[], RepositoryError> => {
-  return fileHistoryRepository.getHistory();
-};
-
-/**
- * ファイル削除ユースケース
- * 特定のファイルの履歴を削除する
- */
-export const deleteFileUseCase = (
-  url: string,
-  fileHistoryRepository: IFileHistoryRepository
-): Effect.Effect<void, RepositoryError> => {
-  return fileHistoryRepository.deleteHistory(url);
 };
