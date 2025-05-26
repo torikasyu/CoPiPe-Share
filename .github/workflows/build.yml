@@ -2,11 +2,8 @@ name: Build
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-  create:
-  workflow_dispatch:
+    tags:
+      - 'v*'  # v1.0.0など、必要に応じてパターンを変更してください
 
 # GitHub Actionsに必要な権限を付与
 permissions:
