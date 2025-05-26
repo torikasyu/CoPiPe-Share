@@ -2,6 +2,7 @@ import { app, BrowserWindow, dialog, ipcMain, clipboard, nativeImage, Menu } fro
 import * as path from 'path';
 import * as fs from 'fs';
 import * as yaml from 'js-yaml';
+import { setupClipboardHandlers, setupGlobalShortcuts, unregisterGlobalShortcuts } from './main/handlers/clipboardHandler';
 
 // メインウィンドウの参照をグローバルに保持
 let mainWindow: BrowserWindow | null = null;
@@ -190,56 +191,8 @@ function setupIpcHandlers() {
     }
   });
   
-  // クリップボードから画像を取得
-  ipcMain.handle('clipboard:getImage', async () => {
-    try {
-      // クリップボードから画像を取得
-      const image = clipboard.readImage();
-      
-      // 画像が空でないかチェック
-      if (image.isEmpty()) {
-        return {
-          success: false,
-          error: 'クリップボードに画像がありません'
-        };
-      }
-      
-      // 一時ファイルとして保存
-      const userDataPath = app.getPath('userData');
-      const tempDir = path.join(userDataPath, 'temp');
-      
-      // 一時ディレクトリが存在しない場合は作成
-      if (!fs.existsSync(tempDir)) {
-        fs.mkdirSync(tempDir, { recursive: true });
-      }
-      
-      // ファイル名を生成
-      const timestamp = new Date().getTime();
-      const filePath = path.join(tempDir, `clipboard_image_${timestamp}.png`);
-      
-      // PNG形式で保存
-      fs.writeFileSync(filePath, image.toPNG());
-      
-      // ファイル情報を返す
-      const stats = fs.statSync(filePath);
-      return {
-        success: true,
-        fileInfo: {
-          name: `clipboard_image_${timestamp}.png`,
-          path: filePath,
-          size: stats.size,
-          mimeType: 'image/png',
-          lastModified: stats.mtime
-        }
-      };
-    } catch (error: unknown) {
-      console.error('クリップボード画像取得エラー:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : '不明なエラー'
-      };
-    }
-  });
+  // クリップボードハンドラーを設定
+  setupClipboardHandlers(ipcMain);
   
   // ファイルアップロード処理
   ipcMain.handle('file:upload', async (event, fileInfo) => {
@@ -491,6 +444,9 @@ app.whenReady().then(() => {
   // macOS用のアプリケーションメニューを設定
   setupApplicationMenu();
   
+  // グローバルショートカットを設定
+  setupGlobalShortcuts();
+  
   createWindow();
 
   // macOSでは、ユーザがDockアイコンをクリックしたときに
@@ -507,4 +463,9 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+// アプリが終了する前にグローバルショートカットを解除
+app.on('will-quit', () => {
+  unregisterGlobalShortcuts();
 });

@@ -17,5 +17,12 @@ interface Window {
       fileName: string;
       percentage: number;
     }) => void) => (() => void) | null;
+    // クリップボード画像処理リスナーを登録する関数
+    // リスナーを削除する関数を返す
+    onClipboardImageProcessed: (callback: (result: {
+      success: boolean;
+      fileInfo?: any;
+      error?: string;
+    }) => void) => (() => void) | null;
   }
 }

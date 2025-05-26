@@ -9,6 +9,9 @@ try {
   // アップロード進捗リスナーを登録する関数
   const uploadProgressListeners = new Set();
   
+  // クリップボード画像処理リスナーを登録する関数
+  const clipboardImageListeners = new Set();
+  
   // アップロード進捗イベントを受け取る
   ipcRenderer.on('upload:progress', (_, progress) => {
     // 登録されたすべてのリスナーに進捗情報を通知
@@ -17,6 +20,18 @@ try {
         listener(progress);
       } catch (error) {
         console.error('進捗リスナーエラー:', error);
+      }
+    });
+  });
+  
+  // クリップボード画像処理完了イベントを受け取る
+  ipcRenderer.on('clipboard:imageProcessed', (_, result) => {
+    // 登録されたすべてのリスナーにクリップボード画像処理結果を通知
+    clipboardImageListeners.forEach(listener => {
+      try {
+        listener(result);
+      } catch (error) {
+        console.error('クリップボード画像リスナーエラー:', error);
       }
     });
   });
@@ -71,6 +86,18 @@ try {
         return () => {
           // リスナーを削除する関数を返す
           uploadProgressListeners.delete(callback);
+        };
+      }
+      return null;
+    },
+    
+    // クリップボード画像処理リスナーを登録する関数
+    onClipboardImageProcessed: (callback) => {
+      if (typeof callback === 'function') {
+        clipboardImageListeners.add(callback);
+        return () => {
+          // リスナーを削除する関数を返す
+          clipboardImageListeners.delete(callback);
         };
       }
       return null;

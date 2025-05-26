@@ -23,6 +23,7 @@ const FileUploader: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const progressCleanupRef = useRef<(() => void) | null>(null);
+  const clipboardCleanupRef = useRef<(() => void) | null>(null);
   
   // クリップボードから画像をペーストする処理
   const handlePaste = async (event: ClipboardEvent<HTMLDivElement>) => {
@@ -66,26 +67,61 @@ const FileUploader: React.FC = () => {
     }
   };
   
-  // アップロード進捗リスナーを設定
+  // グローバルクリップボード画像処理を行う関数
+  const handleGlobalClipboardImage = async (result: { success: boolean; fileInfo?: any; error?: string }) => {
+    if (isUploading) return; // アップロード中は処理しない
+    
+    if (!result.success) {
+      if (result.error && result.error !== 'クリップボードに画像がありません') {
+        setError(result.error);
+      }
+      return;
+    }
+    
+    if (result.fileInfo) {
+      setIsUploading(true);
+      setMessage('グローバルクリップボード画像をアップロード中...');
+      setError(null);
+      setUploadedUrl(null);
+      setThumbnailUrl(null);
+      
+      try {
+        await uploadFile(result.fileInfo);
+      } catch (error) {
+        console.error('グローバルクリップボード画像アップロードエラー:', error);
+        setError(error instanceof Error ? error.message : '不明なエラーが発生しました');
+        setIsUploading(false);
+      }
+    }
+  };
+  
+  // アップロード進捗リスナーとクリップボードリスナーを設定
   useEffect(() => {
     if (window.electronAPI) {
       // 進捗リスナーを登録
-      const cleanup = window.electronAPI.onUploadProgress((progress: UploadProgressInfo) => {
+      const progressCleanup = window.electronAPI.onUploadProgress((progress: UploadProgressInfo) => {
         console.log('アップロード進捗:', progress);
         setUploadProgress(progress);
       });
       
+      // クリップボード画像処理リスナーを登録
+      const clipboardCleanup = window.electronAPI.onClipboardImageProcessed(handleGlobalClipboardImage);
+      
       // クリーンアップ関数を保存
-      progressCleanupRef.current = cleanup;
+      progressCleanupRef.current = progressCleanup;
+      clipboardCleanupRef.current = clipboardCleanup;
       
       return () => {
         // コンポーネントアンマウント時にリスナーを削除
         if (progressCleanupRef.current) {
           progressCleanupRef.current();
         }
+        if (clipboardCleanupRef.current) {
+          clipboardCleanupRef.current();
+        }
       };
     }
-  }, []);
+  }, [isUploading]); // isUploadingの状態が変更されたときに再実行
   
   // 設定を読み込む
   useEffect(() => {
@@ -221,7 +257,7 @@ const FileUploader: React.FC = () => {
       tabIndex={0} // キーボードイベントを受け取るためにtabIndexを設定
       onPaste={handlePaste} // ペーストイベントをハンドル
     >
-      <p>ファイルを選択するか、ctrl/command + v でクリップボードから画像をペースト</p>
+      <p>ファイルを選択するか、Cmd+V / Ctrl+V でクリップボードから画像をグローバルペースト</p>
       
       <div style={{ marginBottom: '20px' }}>
         <input
