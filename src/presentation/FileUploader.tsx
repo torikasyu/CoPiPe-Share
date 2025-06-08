@@ -1,4 +1,4 @@
-import React, { useState, useRef, ChangeEvent, useEffect, ClipboardEvent } from 'react';
+import React, { useState, useRef, ChangeEvent, useEffect, ClipboardEvent, KeyboardEvent } from 'react';
 import { Effect } from 'effect';
 import { FileInfo, UploadProgressInfo } from '../domain/models';
 import { getFileInfo } from '../infrastructure/fileHelper';
@@ -23,50 +23,69 @@ const FileUploader: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const progressCleanupRef = useRef<(() => void) | null>(null);
+  const isProcessingPasteRef = useRef<boolean>(false);
   
   // クリップボードから画像をペーストする処理
-  const handlePaste = async (event: ClipboardEvent<HTMLDivElement>) => {
-    // ペーストイベントを処理
-    {
-      try {
-        // アップロード中は処理しない
-        if (isUploading) return;
-        
-        // Electron APIが利用可能か確認
-        if (!window.electronAPI) {
-          throw new Error('Electron APIが利用できません');
-        }
-        
-        setIsUploading(true);
-        setMessage('クリップボードから画像を取得中...');
-        setError(null);
-        setUploadedUrl(null);
-        setThumbnailUrl(null);
-        
-        // クリップボードから画像を取得
-        const clipboardResult = await window.electronAPI.getClipboardImage();
-        
-        if (!clipboardResult.success) {
-          throw new Error(clipboardResult.error || 'クリップボードから画像を取得できませんでした');
-        }
-        
-        // ファイル情報を取得
-        const fileInfo = clipboardResult.fileInfo;
-        console.log('クリップボード画像情報:', fileInfo);
-        
-        // アップロード処理
-        setMessage('クリップボード画像をアップロード中...');
-        await uploadFile(fileInfo);
-        
-      } catch (error) {
-        console.error('クリップボード画像ペーストエラー:', error);
-        setError(error instanceof Error ? error.message : '不明なエラーが発生しました');
-        setIsUploading(false);
+  const processClipboardPaste = async () => {
+    try {
+      // アップロード中または既に処理中は処理しない
+      if (isUploading || isProcessingPasteRef.current) return;
+      
+      // Electron APIが利用可能か確認
+      if (!window.electronAPI) {
+        throw new Error('Electron APIが利用できません');
       }
+      
+      isProcessingPasteRef.current = true;
+      setIsUploading(true);
+      setMessage('クリップボードから画像を取得中...');
+      setError(null);
+      setUploadedUrl(null);
+      setThumbnailUrl(null);
+      
+      // クリップボードから画像を取得
+      const clipboardResult = await window.electronAPI.getClipboardImage();
+      
+      if (!clipboardResult.success) {
+        throw new Error(clipboardResult.error || 'クリップボードから画像を取得できませんでした');
+      }
+      
+      // ファイル情報を取得
+      const fileInfo = clipboardResult.fileInfo;
+      console.log('クリップボード画像情報:', fileInfo);
+      
+      // アップロード処理
+      setMessage('クリップボード画像をアップロード中...');
+      await uploadFile(fileInfo);
+      
+    } catch (error) {
+      console.error('クリップボード画像ペーストエラー:', error);
+      setError(error instanceof Error ? error.message : '不明なエラーが発生しました');
+      setIsUploading(false);
+    } finally {
+      isProcessingPasteRef.current = false;
     }
   };
   
-  // アップロード進捗リスナーを設定
+  // ペーストイベントハンドラー（divエリア用）
+  const handlePaste = async (event: ClipboardEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    await processClipboardPaste();
+  };
+  
+  // キーボードイベントハンドラー（ウィンドウ全体用）
+  const handleKeyDown = async (event: KeyboardEvent) => {
+    // Cmd+V (macOS) または Ctrl+V (Windows/Linux) を検出
+    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+    const isCtrlKey = isMac ? event.metaKey : event.ctrlKey;
+    
+    if (isCtrlKey && event.key === 'v') {
+      event.preventDefault();
+      await processClipboardPaste();
+    }
+  };
+  
+  // アップロード進捗リスナーとキーボードイベントリスナーを設定
   useEffect(() => {
     if (window.electronAPI) {
       // 進捗リスナーを登録
@@ -77,14 +96,22 @@ const FileUploader: React.FC = () => {
       
       // クリーンアップ関数を保存
       progressCleanupRef.current = cleanup;
-      
-      return () => {
-        // コンポーネントアンマウント時にリスナーを削除
-        if (progressCleanupRef.current) {
-          progressCleanupRef.current();
-        }
-      };
     }
+    
+    // ウィンドウレベルでキーボードイベントリスナーを追加
+    const keyDownHandler = (event: Event) => {
+      handleKeyDown(event as unknown as KeyboardEvent);
+    };
+    
+    document.addEventListener('keydown', keyDownHandler);
+    
+    return () => {
+      // コンポーネントアンマウント時にリスナーを削除
+      if (progressCleanupRef.current) {
+        progressCleanupRef.current();
+      }
+      document.removeEventListener('keydown', keyDownHandler);
+    };
   }, []);
   
   // 設定を読み込む
@@ -221,7 +248,7 @@ const FileUploader: React.FC = () => {
       tabIndex={0} // キーボードイベントを受け取るためにtabIndexを設定
       onPaste={handlePaste} // ペーストイベントをハンドル
     >
-      <p>ファイルを選択するか、ctrl/command + v でクリップボードから画像をペースト</p>
+      <p>ファイルを選択するか、Cmd+V (macOS) または Ctrl+V (Windows/Linux) でクリップボードから画像をペースト</p>
       
       <div style={{ marginBottom: '20px' }}>
         <input
